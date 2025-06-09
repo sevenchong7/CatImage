@@ -1,103 +1,140 @@
+'use client';
 import Image from "next/image";
+import { useCatStore } from "./store/catStore";
+import { use, useEffect, useState } from "react";
+import { useSwipeable } from 'react-swipeable';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const setCatImage = useCatStore((state) => state.setCatImage);
+  const catImage = useCatStore((state) => state.catImage);
+  const setFavoriteCatImage = useCatStore((state) => state.setFavoriteCatImage);
+  const favoriteCatImage = useCatStore((state) => state.favoriteCatImage);
+  const [direction, setDirection] = useState<"left" | "right" | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+  const fetchCatImage = async () => {
+    try {
+      const response = await fetch("https://api.thecatapi.com/v1/images/search?limit=10");
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      setCatImage(data);
+    } catch (error) {
+      console.error("Failed to fetch cat image:", error);
+    }
+  }
+
+  useEffect(() => {
+    fetchCatImage();
+  }, []);
+
+  useEffect(() => {
+    console.log('Current Index: ', currentIndex);
+  }, [currentIndex]);
+
+  const handleSwipeRight = () => {
+    setDirection("right");
+    console.log('Swiped right');
+    if (catImage[currentIndex]) {
+      setFavoriteCatImage(catImage[currentIndex]);
+    }
+    // Move to next image
+    setCurrentIndex((prev) => {
+      if (prev + 1 <= catImage.length) {
+        return prev + 1;
+      }
+      return prev; // Stay on last image
+    });
+
+  };
+
+  const handleSwipeLeft = () => {
+    setDirection("left");
+    console.log('Swiped left');
+    // Just move to next image without favoriting
+    setCurrentIndex((prev) => {
+      if (prev + 1 <= catImage.length) {
+        return prev + 1;
+      }
+      return prev; // Stay on last image
+    });
+
+  };
+
+  const handlers = useSwipeable({
+    onSwipedRight: handleSwipeRight,
+    onSwipedLeft: handleSwipeLeft,
+
+    trackMouse: true, // allows swipe detection with mouse too
+    delta: 10,
+  });
+
+  return (
+    <>
+      {
+        catImage.length - 1 >= currentIndex ?
+          <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)] select-none">
+            <main className="flex flex-col gap-[32px] row-start-2 items-center text-center">
+              <h2 className="justify-center text-2xl sm:text-3xl font-semibold text-center ">
+                Welcome to the Cat Image Gallery
+              </h2>
+              <p className="text-lg sm:text-xl text-center sm:text-left">
+                Swipe right to favorite your cat images!
+              </p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={catImage[currentIndex]?.id || currentIndex}
+                  initial={{ x: direction === "right" ? 300 : -300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: direction === "right" ? -300 : 300, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  {...handlers}
+                  className="w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] relative rounded-lg overflow-hidden shadow-lg transition-transform transform hover:scale-105"
+                >
+                  {catImage[currentIndex]?.url ? (
+                    <Image
+                      src={catImage[currentIndex].url}
+                      alt={`Cat image ${currentIndex + 1}`}
+                      fill
+                      className="object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    <p className="text-gray-500">Loading cat Image...</p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </main>
+          </div> :
+          <div className="grid grid-rows-[20px_1fr_20px]  items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)] select-none">
+            <main className=" flex flex-col gap-[32px] row-start-2 items-center text-center">
+              <h2 className="justify-center text-2xl sm:text-3xl font-semibold text-center">
+                Total Cat Images favorite {favoriteCatImage.length}
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                {
+                  favoriteCatImage.map((cat, index) => (
+                    <div
+                      key={index}
+                      className="flex grid grid-cols-2 w-[200px] h-[200px] sm:w-[300px] sm:h-[300px] relative rounded-lg overflow-hidden shadow-lg transition-transform transform hover:scale-105"
+                    >
+                      <Image
+                        src={cat.url}
+                        alt={`Cat image ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        draggable={false}
+                      />
+                    </div>
+                  ))}
+              </div>
+              <div />
+            </main>
+          </div >
+      }
+    </>
   );
 }
