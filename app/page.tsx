@@ -1,7 +1,7 @@
 'use client';
 import Image from "next/image";
 import { useCatStore } from "./store/catStore";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSwipeable } from 'react-swipeable';
 import { motion, AnimatePresence } from 'framer-motion';
 
